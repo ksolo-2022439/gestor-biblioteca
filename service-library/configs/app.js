@@ -55,7 +55,7 @@ const seedDatabase = async () => {
           autor: 'Miguel de Cervantes',
           categoria: 'Novela',
           anio: 1605,
-          disponible: false,
+          disponible: true,
           veces_prestado: 25
         },
         {

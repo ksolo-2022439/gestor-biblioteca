@@ -1,15 +1,55 @@
+import mongoose from 'mongoose';
 import Prestamo from './prestamo.model.js';
 import Libro from '../libro/libro.model.js';
 
 export const crearPrestamo = async (req, res) => {
   try {
-    const { libro_id } = req.body;
+    const {
+      libro_id,
+      nombre_prestatario,
+      apellido_prestatario,
+      dpi,
+      contacto,
+      fecha_retorno_limite
+    } = req.body;
     const usuario_id = req.user.uid;
 
-    if (!libro_id) {
+    if (!libro_id || !nombre_prestatario || !apellido_prestatario || !dpi || !contacto || !fecha_retorno_limite) {
       return res.status(400).json({
         success: false,
-        message: 'El ID de libro es obligatorio'
+        message: 'Todos los campos son obligatorios: libro_id, nombre_prestatario, apellido_prestatario, dpi, contacto, fecha_retorno_limite'
+      });
+    }
+
+    if (!mongoose.Types.ObjectId.isValid(libro_id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de ID de libro inválido'
+      });
+    }
+
+    const dpiRegex = /^\d{13}$/;
+    if (!dpiRegex.test(dpi)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El DPI debe contener exactamente 13 dígitos numéricos'
+      });
+    }
+
+    const phoneRegex = /^\d{8}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!phoneRegex.test(contacto) && !emailRegex.test(contacto)) {
+      return res.status(400).json({
+        success: false,
+        message: 'El contacto debe ser un número de teléfono de 8 dígitos o un correo electrónico válido'
+      });
+    }
+
+    const fechaLimite = new Date(fecha_retorno_limite);
+    if (isNaN(fechaLimite.getTime()) || fechaLimite <= new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: 'La fecha límite de retorno debe ser una fecha futura válida'
       });
     }
 
@@ -35,7 +75,12 @@ export const crearPrestamo = async (req, res) => {
     const prestamo = new Prestamo({
       usuario_id,
       libro_id,
+      nombre_prestatario,
+      apellido_prestatario,
+      dpi,
+      contacto,
       fecha_prestamo: new Date(),
+      fecha_retorno_limite: fechaLimite,
       estado: 'PRESTADO'
     });
 
@@ -67,8 +112,14 @@ export const registrarDevolucion = async (req, res) => {
       });
     }
 
+    if (!mongoose.Types.ObjectId.isValid(libro_id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de ID de libro inválido'
+      });
+    }
+
     const prestamo = await Prestamo.findOne({
-      usuario_id,
       libro_id,
       estado: 'PRESTADO'
     });
@@ -76,7 +127,7 @@ export const registrarDevolucion = async (req, res) => {
     if (!prestamo) {
       return res.status(404).json({
         success: false,
-        message: 'No se encontró un préstamo activo para este libro y usuario'
+        message: 'No se encontró un préstamo activo para este libro'
       });
     }
 
