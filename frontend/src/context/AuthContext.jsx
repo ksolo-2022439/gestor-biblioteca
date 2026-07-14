@@ -33,8 +33,36 @@ export const AuthProvider = ({ children }) => {
       setUser(usuario);
       return true;
     } catch (err) {
-      console.error('Login error:', err);
-      const msg = err.response?.data?.message || 'Error de conexión con el servidor';
+      let msg = 'Error de conexión con el servidor';
+      if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        msg = err.response.data.errors.map(e => e.message).join('. ');
+      }
+      setError(msg);
+      return false;
+    }
+  };
+
+  const register = async (nombre, correo, contrasena, fecha_nacimiento) => {
+    setError(null);
+    try {
+      const response = await apiAuth.post('/usuario/register', { nombre, correo, contrasena, fecha_nacimiento });
+      const { token: receivedToken, usuario } = response.data;
+
+      localStorage.setItem('token', receivedToken);
+      localStorage.setItem('user', JSON.stringify(usuario));
+
+      setToken(receivedToken);
+      setUser(usuario);
+      return true;
+    } catch (err) {
+      let msg = 'Error al registrar el usuario';
+      if (err.response?.data?.message) {
+        msg = err.response.data.message;
+      } else if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
+        msg = err.response.data.errors.map(e => e.message).join('. ');
+      }
       setError(msg);
       return false;
     }
@@ -48,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, error, login, logout, setError }}>
+    <AuthContext.Provider value={{ user, token, loading, error, login, register, logout, setError }}>
       {children}
     </AuthContext.Provider>
   );
