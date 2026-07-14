@@ -12,5 +12,6 @@ export const registerValidator = [
     }
   }),
   body('contrasena', 'La contraseña debe tener al menos 6 caracteres').isLength({ min: 6 }),
+  body('fecha_nacimiento', 'La fecha de nacimiento es obligatoria y debe ser una fecha válida').not().isEmpty(),
   validateFields
 ];
