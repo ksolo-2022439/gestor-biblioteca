@@ -1,0 +1,61 @@
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: biblioteca-mongodb
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_data:/data/db
+
+  service-auth:
+    build: ./service-auth
+    container_name: biblioteca-service-auth
+    ports:
+      - "3001:3001"
+    environment:
+      - PORT=3001
+      - URI_MONGODB=mongodb://mongodb:27017/biblioteca_auth
+      - JWT_SECRET=ClaveSecretaKinal2026SuperSeguraYFuerte
+    depends_on:
+      - mongodb
+
+  service-library:
+    build: ./service-library
+    container_name: biblioteca-service-library
+    ports:
+      - "3002:3002"
+    environment:
+      - PORT=3002
+      - URI_MONGODB=mongodb://mongodb:27017/biblioteca_library
+      - JWT_SECRET=ClaveSecretaKinal2026SuperSeguraYFuerte
+    depends_on:
+      - mongodb
+
+  service-statistics:
+    build: ./service-statistics
+    container_name: biblioteca-service-statistics
+    ports:
+      - "3003:3003"
+    environment:
+      - PORT=3003
+      - JWT_SECRET=ClaveSecretaKinal2026SuperSeguraYFuerte
+      - LIBRARY_SERVICE_URL=http://service-library:3002
+    depends_on:
+      - service-library
+
+  frontend:
+    build: ./frontend
+    container_name: biblioteca-frontend
+    ports:
+      - "5173:5173"
+    environment:
+      - VITE_AUTH_URL=http://localhost:3001/api/v1
+      - VITE_LIBRARY_URL=http://localhost:3002/api/v1
+      - VITE_STATISTICS_URL=http://localhost:3003/api/v1
+    depends_on:
+      - service-auth
+      - service-library
+      - service-statistics
+
+volumes:
+  mongo_data:

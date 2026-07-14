@@ -16,8 +16,8 @@ const middlewares = (app) => {
 };
 
 const routes = (app) => {
-  app.use('/api/v1/libro', libroRoutes);
-  app.use('/api/v1/prestamo', prestamoRoutes);
+  app.use('/api/v1/books', libroRoutes);
+  app.use('/api/v1', prestamoRoutes);
 
   app.use((req, res) => {
     res.status(404).json({
