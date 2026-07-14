@@ -1,4 +1,6 @@
+import mongoose from 'mongoose';
 import Libro from './libro.model.js';
+import Prestamo from '../prestamo/prestamo.model.js';
 
 export const createLibro = async (req, res) => {
   try {
@@ -53,9 +55,21 @@ export const getLibros = async (req, res) => {
 
     const libros = await Libro.find(filter);
 
+    const librosConPrestamo = [];
+    for (const libro of libros) {
+      const libroObj = libro.toObject();
+      if (!libroObj.disponible) {
+        const prestamo = await Prestamo.findOne({ libro_id: libroObj._id, estado: 'PRESTADO' });
+        libroObj.prestamo = prestamo || null;
+      } else {
+        libroObj.prestamo = null;
+      }
+      librosConPrestamo.push(libroObj);
+    }
+
     res.status(200).json({
       success: true,
-      data: libros
+      data: librosConPrestamo
     });
   } catch (error) {
     res.status(500).json({
@@ -69,6 +83,14 @@ export const getLibros = async (req, res) => {
 export const getLibroById = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de ID de libro inválido'
+      });
+    }
+
     const libro = await Libro.findById(id);
 
     if (!libro) {
@@ -78,9 +100,17 @@ export const getLibroById = async (req, res) => {
       });
     }
 
+    const libroObj = libro.toObject();
+    if (!libroObj.disponible) {
+      const prestamo = await Prestamo.findOne({ libro_id: libroObj._id, estado: 'PRESTADO' });
+      libroObj.prestamo = prestamo || null;
+    } else {
+      libroObj.prestamo = null;
+    }
+
     res.status(200).json({
       success: true,
-      data: libro
+      data: libroObj
     });
   } catch (error) {
     res.status(500).json({
@@ -95,6 +125,13 @@ export const updateLibro = async (req, res) => {
   try {
     const { id } = req.params;
     const { titulo, autor, categoria, anio, disponible } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de ID de libro inválido'
+      });
+    }
 
     const libro = await Libro.findById(id);
     if (!libro) {
@@ -129,6 +166,14 @@ export const updateLibro = async (req, res) => {
 export const deleteLibro = async (req, res) => {
   try {
     const { id } = req.params;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Formato de ID de libro inválido'
+      });
+    }
+
     const libro = await Libro.findByIdAndDelete(id);
 
     if (!libro) {

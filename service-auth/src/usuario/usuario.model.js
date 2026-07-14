@@ -17,6 +17,10 @@ const usuarioSchema = new Schema(
     contrasena: {
       type: String,
       required: [true, 'La contraseña es obligatoria']
+    },
+    fecha_nacimiento: {
+      type: Date,
+      required: [true, 'La fecha de nacimiento es obligatoria']
     }
   },
   {
